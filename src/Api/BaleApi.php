@@ -44,6 +44,24 @@ final class BaleApi {
 		return $this->request( 'sendMessage', $body );
 	}
 
+	public function send_photo( string $chat_id, string $photo_url, string $caption = '', array $reply_markup = array() ): array {
+		$body = array(
+			'chat_id' => $chat_id,
+			'photo'   => esc_url_raw( $photo_url ),
+		);
+
+		if ( '' !== trim( $caption ) ) {
+			$body['caption'] = wp_strip_all_tags( $caption );
+		}
+
+		if ( ! empty( $reply_markup ) ) {
+			$body['reply_markup'] = $reply_markup;
+		}
+
+		return $this->request( 'sendPhoto', $body );
+	}
+
+
 	private function request( string $method, array $body = array() ): array {
 		if ( empty( $this->token ) ) {
 			return array(

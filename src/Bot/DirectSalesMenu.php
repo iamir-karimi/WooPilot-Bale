@@ -69,6 +69,14 @@ final class DirectSalesMenu {
 		);
 	}
 
+	public function get_welcome_image_url(): string {
+		$url = get_option( 'woopilot_bale_direct_sales_welcome_image_url', '' );
+		$url = esc_url_raw( (string) $url );
+
+		return $url ?: '';
+	}
+
+
 	public function get_welcome_message(): string {
 		$message = get_option(
 			'woopilot_bale_direct_sales_welcome_message',

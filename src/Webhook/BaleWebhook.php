@@ -113,6 +113,12 @@ final class BaleWebhook {
 		}
 
 		if ( $this->direct_sales_menu->is_enabled() ) {
+			$shop_section_key = $this->product_browser->resolve_shop_section_key( $text );
+
+			if ( '' !== $shop_section_key ) {
+				return $this->handle_shop_section_action( $chat_id, $shop_section_key );
+			}
+
 			$action = $this->resolve_direct_sales_action( $text );
 
 			if ( '' !== $action ) {
@@ -202,11 +208,22 @@ final class BaleWebhook {
 
 	private function handle_start_command( string $chat_id ): \WP_REST_Response {
 		if ( $this->direct_sales_menu->is_enabled() ) {
-			$this->send_message(
-				$chat_id,
-				$this->direct_sales_menu->get_welcome_message(),
-				$this->direct_sales_menu->get_keyboard()
-			);
+			$welcome_image = $this->direct_sales_menu->get_welcome_image_url();
+
+			if ( '' !== $welcome_image ) {
+				$this->send_photo(
+					$chat_id,
+					$welcome_image,
+					$this->direct_sales_menu->get_welcome_message(),
+					$this->direct_sales_menu->get_keyboard()
+				);
+			} else {
+				$this->send_message(
+					$chat_id,
+					$this->direct_sales_menu->get_welcome_message(),
+					$this->direct_sales_menu->get_keyboard()
+				);
+			}
 		} else {
 			$this->send_message(
 				$chat_id,
@@ -253,12 +270,53 @@ final class BaleWebhook {
 		}
 
 		if ( $this->direct_sales_menu->is_enabled() ) {
+			$welcome_image = $this->direct_sales_menu->get_welcome_image_url();
+
+			if ( '' !== $welcome_image ) {
+				$this->send_photo(
+					$chat_id,
+					$welcome_image,
+					$this->direct_sales_menu->get_welcome_message(),
+					$this->direct_sales_menu->get_keyboard()
+				);
+			} else {
+				$this->send_message(
+					$chat_id,
+					$this->direct_sales_menu->get_welcome_message(),
+					$this->direct_sales_menu->get_keyboard()
+				);
+			}
+		}
+
+		return new \WP_REST_Response( array( 'ok' => true ), 200 );
+	}
+
+
+	private function handle_shop_section_action( string $chat_id, string $section_key ): \WP_REST_Response {
+		$result = $this->product_browser->get_product_cards_by_shop_section( $section_key );
+
+		if ( ! empty( $result['error'] ) ) {
 			$this->send_message(
 				$chat_id,
-				$this->direct_sales_menu->get_welcome_message(),
+				(string) $result['error'],
+				$this->direct_sales_menu->get_keyboard()
+			);
+
+			return new \WP_REST_Response( array( 'ok' => true ), 200 );
+		}
+
+		if ( ! empty( $result['title'] ) ) {
+			$this->send_message(
+				$chat_id,
+				(string) $result['title'],
 				$this->direct_sales_menu->get_keyboard()
 			);
 		}
+
+		$this->send_product_cards(
+			$chat_id,
+			isset( $result['items'] ) && is_array( $result['items'] ) ? $result['items'] : array()
+		);
 
 		return new \WP_REST_Response( array( 'ok' => true ), 200 );
 	}
@@ -276,8 +334,8 @@ final class BaleWebhook {
 			case 'shop':
 				$this->send_message(
 					$chat_id,
-					$this->product_browser->get_latest_products(),
-					$this->direct_sales_menu->get_keyboard()
+					$this->product_browser->get_shop_intro_text(),
+					$this->product_browser->get_shop_sections_keyboard()
 				);
 				break;
 
@@ -360,12 +418,24 @@ final class BaleWebhook {
 	}
 
 	private function handle_product_search_or_command( string $chat_id, string $text ): \WP_REST_Response {
+		$shop_section_key = $this->product_browser->resolve_shop_section_key( $text );
+
+		if ( '' !== $shop_section_key ) {
+			return $this->handle_shop_section_action( $chat_id, $shop_section_key );
+		}
+
 		if ( preg_match( '/^product\s+([0-9]+)$/i', $text, $matches ) ) {
-			$this->send_message(
-				$chat_id,
-				$this->product_browser->get_product_by_id( absint( $matches[1] ) ),
-				$this->direct_sales_menu->get_keyboard()
-			);
+			$result = $this->product_browser->get_product_card_by_id( absint( $matches[1] ) );
+
+			if ( ! empty( $result['error'] ) || empty( $result['item'] ) ) {
+				$this->send_message(
+					$chat_id,
+					! empty( $result['error'] ) ? (string) $result['error'] : $this->product_browser->get_product_by_id( absint( $matches[1] ) ),
+					$this->direct_sales_menu->get_keyboard()
+				);
+			} else {
+				$this->send_product_cards( $chat_id, array( $result['item'] ) );
+			}
 
 			return new \WP_REST_Response( array( 'ok' => true ), 200 );
 		}
@@ -424,6 +494,65 @@ final class BaleWebhook {
 
 		return mb_strtolower( trim( $text ) );
 	}
+
+	private function send_product_cards( string $chat_id, array $items ): void {
+		if ( empty( $items ) ) {
+			$this->send_message(
+				$chat_id,
+				__( 'محصولی برای نمایش وجود ندارد.', 'woopilot-bale' ),
+				$this->direct_sales_menu->get_keyboard()
+			);
+
+			return;
+		}
+
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$image_url    = isset( $item['image_url'] ) ? esc_url_raw( (string) $item['image_url'] ) : '';
+			$caption      = isset( $item['caption'] ) ? (string) $item['caption'] : '';
+			$fallback     = isset( $item['fallback_text'] ) ? (string) $item['fallback_text'] : $caption;
+			$reply_markup = isset( $item['reply_markup'] ) && is_array( $item['reply_markup'] ) ? $item['reply_markup'] : array();
+
+			if ( '' !== $image_url ) {
+				$result = $this->send_photo(
+					$chat_id,
+					$image_url,
+					$caption,
+					$reply_markup
+				);
+
+				if ( ! empty( $result['success'] ) ) {
+					continue;
+				}
+			}
+
+			$this->send_message(
+				$chat_id,
+				$fallback,
+				! empty( $reply_markup ) ? $reply_markup : $this->direct_sales_menu->get_keyboard()
+			);
+		}
+	}
+
+	private function send_photo( string $chat_id, string $photo_url, string $caption = '', array $reply_markup = array() ): array {
+		$result = $this->api->send_photo( $chat_id, $photo_url, $caption, $reply_markup );
+
+		$this->debug_log(
+			'SEND PHOTO RESULT',
+			array(
+				'chat_id' => $chat_id,
+				'photo'   => $photo_url,
+				'caption' => $caption,
+				'result'  => $result,
+			)
+		);
+
+		return $result;
+	}
+
 
 	private function send_message( string $chat_id, string $message, array $reply_markup = array() ): array {
 		$result = $this->api->send_message( $chat_id, $message, $reply_markup );

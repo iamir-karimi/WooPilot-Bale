@@ -1,8 +1,37 @@
+@font-face {
+	font-family: 'IRANYekanX';
+	src: url('../fonts/IRANYekanX-Regular.woff') format('woff');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'IRANYekanX';
+	src: url('../fonts/IRANYekanX-Bold.woff') format('woff');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+h1,h2,h3,h4,h5,h6{
+    font-family: 'IRANYekanX', sans-serif !important;
+}
+.woopilot-bale-wrap,
+.woopilot-bale-wrap * {
+	font-family: 'IRANYekanX', sans-serif;
+}
+.woopilot-auth-shell,
+.woopilot-auth-shell * {
+	font-family: 'IRANYekanX', sans-serif !important;
+}
+
 .woopilot-bale-wrap {
 	max-width: 100%;
 	direction: rtl;
 }
-
+.dashicons, .dashicons-before:before {
+    font-family: dashicons !important;
+}
 .woopilot-bale-panel {
 	background: #fff;
 	border: 1px solid #dcdcde;

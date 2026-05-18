@@ -31,9 +31,17 @@ final class Settings {
 
 			'woopilot_bale_direct_sales_enabled'            => array( $this, 'sanitize_yes_no' ),
 			'woopilot_bale_direct_sales_welcome_message'    => array( $this, 'sanitize_template' ),
+			'woopilot_bale_direct_sales_welcome_image_url'  => array( $this, 'sanitize_url' ),
 			'woopilot_bale_direct_sales_about_text'         => array( $this, 'sanitize_template' ),
 			'woopilot_bale_direct_sales_support_text'       => array( $this, 'sanitize_template' ),
 			'woopilot_bale_direct_sales_buttons'            => array( $this, 'sanitize_direct_sales_buttons' ),
+			'woopilot_bale_direct_sales_shop_intro_text'    => array( $this, 'sanitize_template' ),
+			'woopilot_bale_direct_sales_shop_section_1_label'=> array( $this, 'sanitize_text_preserve' ),
+			'woopilot_bale_direct_sales_shop_section_1_ids'  => array( $this, 'sanitize_product_ids' ),
+			'woopilot_bale_direct_sales_shop_section_2_label'=> array( $this, 'sanitize_text_preserve' ),
+			'woopilot_bale_direct_sales_shop_section_2_ids'  => array( $this, 'sanitize_product_ids' ),
+			'woopilot_bale_direct_sales_shop_section_3_label'=> array( $this, 'sanitize_text_preserve' ),
+			'woopilot_bale_direct_sales_shop_section_3_ids'  => array( $this, 'sanitize_product_ids' ),
 
 			'woopilot_bale_auth_logo_id'                    => array( $this, 'sanitize_number' ),
 			'woopilot_bale_auth_title'                      => array( $this, 'sanitize_text_preserve' ),
@@ -366,6 +374,12 @@ final class Settings {
 				__( 'پیام خوش‌آمدگویی ربات', 'woopilot-bale' ),
 				__( 'این پیام بعد از استارت ربات برای کاربر ارسال می‌شود.', 'woopilot-bale' )
 			);
+
+			$this->field_text(
+				'woopilot_bale_direct_sales_welcome_image_url',
+				__( 'تصویر پیام خوش‌آمدگویی', 'woopilot-bale' ),
+				__( 'آدرس کامل تصویر را وارد کنید. اگر خالی باشد پیام خوش‌آمدگویی فقط به صورت متن ارسال می‌شود.', 'woopilot-bale' )
+			);
 			?>
 
 			<div class="woopilot-bale-field woopilot-bale-field-template">
@@ -398,6 +412,105 @@ final class Settings {
 							>
 						</div>
 					<?php endforeach; ?>
+				</div>
+			</div>
+
+			<div class="woopilot-bale-field woopilot-bale-field-template">
+				<div class="woopilot-bale-field-label">
+					<strong><?php echo esc_html__( 'بخش‌های فروشگاه داخل ربات', 'woopilot-bale' ); ?></strong>
+					<p><?php echo esc_html__( 'وقتی کاربر دکمه فروشگاه را می‌زند، به جای نمایش همه محصولات، این سه دکمه inline نمایش داده می‌شود. متن دکمه‌ها و شناسه محصولات هر بخش قابل تنظیم است.', 'woopilot-bale' ); ?></p>
+				</div>
+
+				<div class="woopilot-bale-field-control">
+					<p class="description" style="margin-bottom:12px;">
+						<?php echo esc_html__( 'شناسه محصولات را با ویرگول جدا کنید. مثال: 123,456,789', 'woopilot-bale' ); ?>
+					</p>
+
+					<div style="margin-bottom:18px;">
+						<label style="display:block;font-weight:700;margin-bottom:6px;">
+							<?php echo esc_html__( 'متن قبل از دکمه‌های فروشگاه', 'woopilot-bale' ); ?>
+						</label>
+						<textarea
+							name="woopilot_bale_direct_sales_shop_intro_text"
+							rows="3"
+							class="large-text"
+						><?php echo esc_textarea( get_option( 'woopilot_bale_direct_sales_shop_intro_text', __( 'لطفاً یکی از بخش‌های فروشگاه را انتخاب کنید:', 'woopilot-bale' ) ) ); ?></textarea>
+					</div>
+
+					<div style="display:grid;grid-template-columns:220px 1fr;gap:140px;align-items:start;margin-bottom:14px;">
+						<div>
+							<label style="display:block;font-weight:700;margin-bottom:6px;">
+								<?php echo esc_html__( 'عنوان دکمه اول', 'woopilot-bale' ); ?>
+							</label>
+							<input
+								type="text"
+								name="woopilot_bale_direct_sales_shop_section_1_label"
+								value="<?php echo esc_attr( get_option( 'woopilot_bale_direct_sales_shop_section_1_label', __( 'پرطرفدارترین‌ها', 'woopilot-bale' ) ) ); ?>"
+								class="regular-text"
+							>
+						</div>
+						<div>
+							<label style="display:block;font-weight:700;margin-bottom:6px;">
+								<?php echo esc_html__( 'شناسه محصولات دکمه اول', 'woopilot-bale' ); ?>
+							</label>
+							<textarea
+								name="woopilot_bale_direct_sales_shop_section_1_ids"
+								rows="2"
+								class="large-text"
+								placeholder="123,456,789"
+							><?php echo esc_textarea( get_option( 'woopilot_bale_direct_sales_shop_section_1_ids', '' ) ); ?></textarea>
+						</div>
+					</div>
+
+					<div style="display:grid;grid-template-columns:220px 1fr;gap:140px;align-items:start;margin-bottom:14px;">
+						<div>
+							<label style="display:block;font-weight:700;margin-bottom:6px;">
+								<?php echo esc_html__( 'عنوان دکمه دوم', 'woopilot-bale' ); ?>
+							</label>
+							<input
+								type="text"
+								name="woopilot_bale_direct_sales_shop_section_2_label"
+								value="<?php echo esc_attr( get_option( 'woopilot_bale_direct_sales_shop_section_2_label', __( 'پرفروش‌ترین‌ها', 'woopilot-bale' ) ) ); ?>"
+								class="regular-text"
+							>
+						</div>
+						<div>
+							<label style="display:block;font-weight:700;margin-bottom:6px;">
+								<?php echo esc_html__( 'شناسه محصولات دکمه دوم', 'woopilot-bale' ); ?>
+							</label>
+							<textarea
+								name="woopilot_bale_direct_sales_shop_section_2_ids"
+								rows="2"
+								class="large-text"
+								placeholder="123,456,789"
+							><?php echo esc_textarea( get_option( 'woopilot_bale_direct_sales_shop_section_2_ids', '' ) ); ?></textarea>
+						</div>
+					</div>
+
+					<div style="display:grid;grid-template-columns:220px 1fr;gap:140px;align-items:start;margin-bottom:14px;">
+						<div>
+							<label style="display:block;font-weight:700;margin-bottom:6px;">
+								<?php echo esc_html__( 'عنوان دکمه سوم', 'woopilot-bale' ); ?>
+							</label>
+							<input
+								type="text"
+								name="woopilot_bale_direct_sales_shop_section_3_label"
+								value="<?php echo esc_attr( get_option( 'woopilot_bale_direct_sales_shop_section_3_label', __( 'تخفیفات ویژه', 'woopilot-bale' ) ) ); ?>"
+								class="regular-text"
+							>
+						</div>
+						<div>
+							<label style="display:block;font-weight:700;margin-bottom:6px;">
+								<?php echo esc_html__( 'شناسه محصولات دکمه سوم', 'woopilot-bale' ); ?>
+							</label>
+							<textarea
+								name="woopilot_bale_direct_sales_shop_section_3_ids"
+								rows="2"
+								class="large-text"
+								placeholder="123,456,789"
+							><?php echo esc_textarea( get_option( 'woopilot_bale_direct_sales_shop_section_3_ids', '' ) ); ?></textarea>
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -1101,9 +1214,17 @@ final class Settings {
 		$direct_sales_options = array(
 			'woopilot_bale_direct_sales_enabled',
 			'woopilot_bale_direct_sales_welcome_message',
+			'woopilot_bale_direct_sales_welcome_image_url',
 			'woopilot_bale_direct_sales_about_text',
 			'woopilot_bale_direct_sales_support_text',
 			'woopilot_bale_direct_sales_buttons',
+			'woopilot_bale_direct_sales_shop_intro_text',
+			'woopilot_bale_direct_sales_shop_section_1_label',
+			'woopilot_bale_direct_sales_shop_section_1_ids',
+			'woopilot_bale_direct_sales_shop_section_2_label',
+			'woopilot_bale_direct_sales_shop_section_2_ids',
+			'woopilot_bale_direct_sales_shop_section_3_label',
+			'woopilot_bale_direct_sales_shop_section_3_ids',
 		);
 
 		foreach ( array_keys( $this->get_direct_sales_default_buttons() ) as $key ) {
@@ -1286,6 +1407,44 @@ final class Settings {
 		$value = sanitize_hex_color( (string) $value );
 
 		return $value ?: '#ffffff';
+	}
+
+
+	public function sanitize_product_ids( $value ): string {
+		$option_name = $this->get_current_sanitizing_option_name();
+
+		if ( null === $value && $this->should_preserve_missing_option( $option_name ) ) {
+			return (string) get_option( $option_name, '' );
+		}
+
+		$value = sanitize_textarea_field( (string) $value );
+		$ids   = preg_split( '/[\s,،]+/u', $value );
+
+		if ( ! is_array( $ids ) ) {
+			return '';
+		}
+
+		$ids = array_map(
+			static function ( $id ): int {
+				return absint( $id );
+			},
+			$ids
+		);
+
+		$ids = array_values( array_unique( array_filter( $ids ) ) );
+
+		return implode( ',', $ids );
+	}
+
+
+	public function sanitize_url( $value ): string {
+		$option_name = $this->get_current_sanitizing_option_name();
+
+		if ( null === $value && $this->should_preserve_missing_option( $option_name ) ) {
+			return (string) get_option( $option_name, '' );
+		}
+
+		return esc_url_raw( (string) $value );
 	}
 
 
