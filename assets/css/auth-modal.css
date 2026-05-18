@@ -1,0 +1,172 @@
+.woopilot-auth-shell {
+	min-height: 620px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 40px 16px;
+	background: linear-gradient(135deg, #f7f9fc 0%, #ffffff 100%);
+	direction: rtl;
+}
+
+.woopilot-auth-card {
+	width: 100%;
+	max-width: 430px;
+	background: rgba(255, 255, 255, 0.94);
+	border-radius: 24px;
+	box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
+	padding: 36px;
+	position: relative;
+	overflow: hidden;
+}
+
+.woopilot-auth-logo {
+	text-align: center;
+	margin-bottom: 26px;
+	font-size: 24px;
+	font-weight: 800;
+	color: #1f2937;
+}
+
+.woopilot-auth-title {
+	text-align: center;
+	font-size: 21px;
+	font-weight: 700;
+	margin-bottom: 28px;
+	color: #111827;
+}
+
+.woopilot-auth-field {
+	margin-bottom: 16px;
+}
+
+.woopilot-auth-field input {
+	width: 100%;
+	height: 54px;
+	border: 1px solid #eef0f4;
+	background: #f8fafc;
+	border-radius: 12px;
+	padding: 0 16px;
+	font-size: 14px;
+	outline: none;
+	transition: all 0.2s ease;
+}
+
+.woopilot-auth-field input:focus {
+	background: #fff;
+	border-color: #8bd957;
+	box-shadow: 0 0 0 4px rgba(139, 217, 87, 0.14);
+}
+
+.woopilot-auth-button {
+	width: 100%;
+	height: 54px;
+	border: none;
+	border-radius: 12px;
+	background: #8bd957;
+	color: #fff;
+	font-size: 15px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.woopilot-auth-button:hover {
+	background: #78ca45;
+	transform: translateY(-1px);
+}
+
+.woopilot-auth-button.secondary {
+	background: #f3f4f6;
+	color: #374151;
+	margin-top: 10px;
+}
+
+.woopilot-auth-step {
+	display: none;
+	animation: woopilotFade 0.25s ease;
+}
+
+.woopilot-auth-step.is-active {
+	display: block;
+}
+
+.woopilot-auth-notice {
+	display: none;
+	margin-bottom: 16px;
+	padding: 12px 14px;
+	border-radius: 12px;
+	font-size: 13px;
+	line-height: 1.8;
+}
+
+.woopilot-auth-notice.is-error {
+	display: block;
+	background: #fef2f2;
+	color: #991b1b;
+}
+
+.woopilot-auth-notice.is-success {
+	display: block;
+	background: #f0fdf4;
+	color: #166534;
+}
+
+.woopilot-auth-notice.is-info {
+	display: block;
+	background: #eff6ff;
+	color: #1d4ed8;
+}
+
+.woopilot-auth-command {
+	display: block;
+	direction: ltr;
+	text-align: left;
+	background: #f8fafc;
+	border: 1px dashed #cbd5e1;
+	border-radius: 12px;
+	padding: 14px;
+	margin: 14px 0;
+	font-size: 13px;
+	color: #111827;
+	user-select: all;
+}
+
+.woopilot-auth-bot-link {
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	line-height: 54px;
+	height: 54px;
+	border-radius: 12px;
+	background: #14b8a6;
+	color: #fff;
+	font-weight: 700;
+	margin-bottom: 10px;
+}
+
+.woopilot-auth-help {
+	font-size: 12px;
+	color: #6b7280;
+	line-height: 1.9;
+	text-align: center;
+	margin-top: 18px;
+}
+
+.woopilot-auth-card.is-loading:after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: rgba(255, 255, 255, 0.65);
+	backdrop-filter: blur(2px);
+}
+
+@keyframes woopilotFade {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
