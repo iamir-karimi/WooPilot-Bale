@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: WooPilot Bale Notifications
- * Plugin URI:  https://example.com/woopilot-bale
+ * Plugin URI:  https://github.com/iamir-karimi/WooPilot-Bale
  * Description: Professional WooCommerce integration with Bale Messenger for order notifications, automation, queue, and logging.
  * Version:     1.0.0
- * Author:      WooPilot
- * Author URI:  https://example.com
+ * Author:      iamir
+ * Author URI:  https://iamirs.ir
  * Text Domain: woopilot-bale
  * Domain Path: /languages
  * Requires PHP: 7.4

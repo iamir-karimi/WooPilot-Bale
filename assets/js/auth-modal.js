@@ -10,48 +10,95 @@
 	let phone = '';
 	let token = '';
 	let checkTimer = null;
+	let otpSending = false;
+	let otpSent = false;
+	let requestRunning = false;
 
 	function setLoading(isLoading) {
+		requestRunning = isLoading;
 		box.toggleClass('is-loading', isLoading);
 		box.find('button').prop('disabled', isLoading);
 	}
 
+	function clearLoading() {
+		requestRunning = false;
+		box.removeClass('is-loading');
+		box.find('button').prop('disabled', false);
+	}
+
 	function showMessage(message, type = 'info') {
 		const notice = box.find('.woopilot-auth-notice');
-		notice.removeClass('is-error is-success is-info');
-		notice.addClass('is-' + type);
-		notice.text(message).fadeIn(150);
+
+		notice
+			.removeClass('is-error is-success is-info')
+			.addClass('is-' + type)
+			.text(message || '')
+			.fadeIn(150);
 	}
 
 	function switchStep(step) {
 		box.find('.woopilot-auth-step').removeClass('is-active');
 		box.find('.woopilot-auth-step[data-step="' + step + '"]').addClass('is-active');
+		clearLoading();
 	}
 
-	function request(action, data, callback) {
+	function stopPolling() {
+		if (checkTimer) {
+			clearInterval(checkTimer);
+			checkTimer = null;
+		}
+	}
+
+	function request(action, data, callback, errorCallback) {
+		if (requestRunning && action !== 'woopilot_bale_auth_check') {
+			return;
+		}
+
 		setLoading(true);
 
 		$.post(WooPilotBaleAuth.ajaxUrl, Object.assign({
 			action: action,
 			nonce: WooPilotBaleAuth.nonce
-		}, data))
+		}, data || {}))
 			.done(function (response) {
+				clearLoading();
+
 				if (response && response.success) {
-					callback(response.data || {});
+					if (typeof callback === 'function') {
+						callback(response.data || {});
+					}
 				} else {
-					showMessage(response.data && response.data.message ? response.data.message : WooPilotBaleAuth.i18n.error, 'error');
+					const message = response && response.data && response.data.message
+						? response.data.message
+						: WooPilotBaleAuth.i18n.error;
+
+					showMessage(message, 'error');
+
+					if (typeof errorCallback === 'function') {
+						errorCallback(response ? response.data : {});
+					}
 				}
 			})
 			.fail(function () {
+				clearLoading();
 				showMessage(WooPilotBaleAuth.i18n.error, 'error');
-			})
-			.always(function () {
-				setLoading(false);
+
+				if (typeof errorCallback === 'function') {
+					errorCallback({});
+				}
 			});
 	}
 
 	box.on('submit', '.woopilot-auth-phone-form', function (e) {
 		e.preventDefault();
+
+		if (requestRunning) {
+			return;
+		}
+
+		stopPolling();
+		otpSending = false;
+		otpSent = false;
 
 		phone = $.trim(box.find('[name="phone"]').val());
 
@@ -59,9 +106,9 @@
 			phone: phone,
 			username: $.trim(box.find('[name="username"]').val())
 		}, function (data) {
-			token = data.token;
+			token = data.token || '';
 
-			box.find('.woopilot-auth-command').text(data.command);
+			box.find('.woopilot-auth-command').text(data.command || '');
 
 			if (data.bot_url) {
 				box.find('.woopilot-auth-bot-link').attr('href', data.bot_url).show();
@@ -91,6 +138,7 @@
 			otp: $.trim(box.find('[name="otp"]').val())
 		}, function (data) {
 			showMessage(data.message, 'success');
+			stopPolling();
 
 			setTimeout(function () {
 				window.location.href = data.redirect || window.location.href;
@@ -98,24 +146,51 @@
 		});
 	});
 
-	function startConnectionPolling() {
-		if (checkTimer) {
-			clearInterval(checkTimer);
+	box.on('copy cut paste', function () {
+		clearLoading();
+	});
+
+	$(window).on('focus pageshow', function () {
+		clearLoading();
+
+		if (phone && !otpSent && !otpSending) {
+			checkConnection(false);
 		}
+	});
+
+	document.addEventListener('visibilitychange', function () {
+		clearLoading();
+
+		if (!document.hidden && phone && !otpSent && !otpSending) {
+			checkConnection(false);
+		}
+	});
+
+	function startConnectionPolling() {
+		stopPolling();
 
 		checkTimer = setInterval(function () {
-			checkConnection(false);
-		}, 4000);
+			if (!otpSent && !otpSending) {
+				checkConnection(false);
+			}
+		}, 5000);
 	}
 
 	function checkConnection(manual) {
+		if (!phone || otpSent || otpSending) {
+			return;
+		}
+
 		request('woopilot_bale_auth_check', {
 			phone: phone
 		}, function (data) {
 			if (data.connected) {
-				clearInterval(checkTimer);
+				stopPolling();
 				showMessage(data.message, 'success');
-				sendOtp();
+
+				setTimeout(function () {
+					sendOtp();
+				}, 300);
 			} else if (manual) {
 				showMessage(data.message, 'info');
 			}
@@ -123,12 +198,25 @@
 	}
 
 	function sendOtp() {
+		if (!phone || otpSending || otpSent) {
+			return;
+		}
+
+		otpSending = true;
+		clearLoading();
+
 		request('woopilot_bale_auth_send_otp', {
 			phone: phone
 		}, function (data) {
+			otpSent = true;
+			otpSending = false;
+
+			stopPolling();
 			showMessage(data.message, 'success');
 			switchStep('otp');
+		}, function () {
+			otpSending = false;
+			otpSent = false;
 		});
 	}
-
 })(jQuery);

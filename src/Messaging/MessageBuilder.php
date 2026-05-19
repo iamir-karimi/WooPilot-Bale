@@ -13,11 +13,16 @@ final class MessageBuilder {
 	}
 
 	public function build_product_message( string $template, \WC_Product $product ): string {
+		$stock_quantity = $product->get_stock_quantity();
+
 		$variables = array(
-			'{product_id}'     => (string) $product->get_id(),
-			'{product_name}'   => $product->get_name(),
-			'{stock_quantity}' => (string) $product->get_stock_quantity(),
-			'{product_sku}'    => $product->get_sku(),
+			'{product_id}'      => (string) $product->get_id(),
+			'{product_name}'    => $product->get_name(),
+			'{stock_quantity}'  => null === $stock_quantity ? __( 'نامشخص', 'woopilot-bale' ) : (string) $stock_quantity,
+			'{product_sku}'     => $product->get_sku(),
+			'{product_price}'   => wp_strip_all_tags( $product->get_price_html() ),
+			'{product_status}'  => $product->is_in_stock() ? __( 'موجود', 'woopilot-bale' ) : __( 'ناموجود', 'woopilot-bale' ),
+			'{low_stock_limit}' => (string) absint( get_option( 'woopilot_bale_low_stock_threshold', 0 ) ),
 		);
 
 		return $this->replace_variables( $template, $variables );

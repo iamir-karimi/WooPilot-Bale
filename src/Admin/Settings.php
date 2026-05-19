@@ -69,6 +69,7 @@ final class Settings {
 			'woopilot_bale_template_customer_order_confirmed' => array( $this, 'sanitize_template' ),
 			'woopilot_bale_template_payment_success'          => array( $this, 'sanitize_template' ),
 			'woopilot_bale_template_payment_failed'           => array( $this, 'sanitize_template' ),
+			'woopilot_bale_template_payment_reminder'         => array( $this, 'sanitize_template' ),
 			'woopilot_bale_template_order_processing'         => array( $this, 'sanitize_template' ),
 			'woopilot_bale_template_order_completed'          => array( $this, 'sanitize_template' ),
 			'woopilot_bale_template_order_cancelled'          => array( $this, 'sanitize_template' ),
@@ -89,6 +90,10 @@ final class Settings {
 				)
 			);
 		}
+
+		add_action( 'update_option_woopilot_bale_enable_sales_report_notification', array( $this, 'reschedule_sales_report_cron' ), 10, 3 );
+		add_action( 'update_option_woopilot_bale_sales_report_period', array( $this, 'reschedule_sales_report_cron' ), 10, 3 );
+		add_action( 'update_option_woopilot_bale_sales_report_send_time', array( $this, 'reschedule_sales_report_cron' ), 10, 3 );
 	}
 
 	public function handle_test_connection(): void {
@@ -939,7 +944,12 @@ final class Settings {
 					<code>{billing_phone}</code>
 					<code>{billing_email}</code>
 					<code>{site_name}</code>
-				</div>
+				
+					<code>{order_payment_url}</code>
+					<code>{product_name}</code>
+					<code>{product_id}</code>
+					<code>{stock_quantity}</code>
+					<code>{stock_threshold}</code></div>
 			</div>
 
 			<?php
@@ -947,6 +957,7 @@ final class Settings {
 			$this->field_template( 'woopilot_bale_template_customer_order_confirmed', __( 'پیام تایید سفارش برای مشتری', 'woopilot-bale' ), __( 'بعد از ثبت سفارش، این پیام برای مشتری ارسال می‌شود.', 'woopilot-bale' ) );
 			$this->field_template( 'woopilot_bale_template_payment_success', __( 'پیام پرداخت موفق', 'woopilot-bale' ), __( 'بعد از پرداخت موفق سفارش، این پیام برای مشتری ارسال می‌شود.', 'woopilot-bale' ) );
 			$this->field_template( 'woopilot_bale_template_payment_failed', __( 'پیام پرداخت ناموفق', 'woopilot-bale' ), __( 'در صورت ناموفق بودن پرداخت، این پیام برای مشتری ارسال می‌شود.', 'woopilot-bale' ) );
+			$this->field_template( 'woopilot_bale_template_payment_reminder', __( 'پیام یادآوری پرداخت', 'woopilot-bale' ), __( 'اگر سفارش پرداخت‌نشده باقی بماند، این پیام به مشتری ارسال می‌شود.', 'woopilot-bale' ) );
 			$this->field_template( 'woopilot_bale_template_order_processing', __( 'پیام وضعیت در حال پردازش', 'woopilot-bale' ), __( 'وقتی وضعیت سفارش به در حال پردازش تغییر کند، این پیام ارسال می‌شود.', 'woopilot-bale' ) );
 			$this->field_template( 'woopilot_bale_template_order_completed', __( 'پیام تکمیل سفارش', 'woopilot-bale' ), __( 'وقتی سفارش تکمیل شود، این پیام برای مشتری ارسال می‌شود.', 'woopilot-bale' ) );
 			$this->field_template( 'woopilot_bale_template_order_cancelled', __( 'پیام لغو سفارش', 'woopilot-bale' ), __( 'وقتی سفارش لغو شود، این پیام برای مشتری ارسال می‌شود.', 'woopilot-bale' ) );
@@ -1270,6 +1281,7 @@ final class Settings {
 				'woopilot_bale_template_customer_order_confirmed',
 				'woopilot_bale_template_payment_success',
 				'woopilot_bale_template_payment_failed',
+				'woopilot_bale_template_payment_reminder',
 				'woopilot_bale_template_order_processing',
 				'woopilot_bale_template_order_completed',
 				'woopilot_bale_template_order_cancelled',
@@ -1470,8 +1482,26 @@ final class Settings {
 
 		$value = sanitize_text_field( (string) $value );
 
-		return preg_match( '/^[0-2][0-9]:[0-5][0-9]$/', $value ) ? $value : '23:00';
+		return preg_match( '/^([01][0-9]|2[0-3]):[0-5][0-9]$/', $value ) ? $value : '23:00';
 	}
+
+	public function reschedule_sales_report_cron( $old_value = null, $value = null, $option = '' ): void {
+		$hook = 'woopilot_bale_send_scheduled_sales_report';
+
+		if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
+			wp_clear_scheduled_hook( $hook );
+		}
+
+		if ( 'yes' !== get_option( 'woopilot_bale_enable_sales_report_notification', 'no' ) ) {
+			return;
+		}
+
+		if ( class_exists( '\WooPilot\Bale\Reports\ScheduledSalesReport' ) ) {
+			$scheduled_report = new \WooPilot\Bale\Reports\ScheduledSalesReport();
+			$scheduled_report->maybe_schedule();
+		}
+	}
+
 
 	public function handle_set_webhook(): void {
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {

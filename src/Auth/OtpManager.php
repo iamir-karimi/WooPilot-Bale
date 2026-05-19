@@ -30,6 +30,16 @@ final class OtpManager {
 			);
 		}
 
+		$lock_key = 'woopilot_bale_otp_send_lock_' . md5( $phone );
+
+		if ( get_transient( $lock_key ) ) {
+			return array(
+				'success' => true,
+				'message' => __( 'کد ورود قبلاً ارسال شده است. لطفاً پیام‌های بله را بررسی کنید.', 'woopilot-bale' ),
+				'locked'  => true,
+			);
+		}
+
 		$bale_user = $this->bale_user_repository->find_by_phone( $phone, true );
 
 		if ( ! $bale_user || empty( $bale_user->bale_chat_id ) || 'active' !== $bale_user->status ) {
@@ -38,6 +48,8 @@ final class OtpManager {
 				'message' => __( 'این شماره هنوز به ربات بله متصل نشده است. ابتدا شناسه اتصال را در ربات ارسال کنید.', 'woopilot-bale' ),
 			);
 		}
+
+		set_transient( $lock_key, 1, 60 );
 
 		$otp        = $this->generate_otp();
 		$otp_hash   = wp_hash_password( $otp );
@@ -66,6 +78,8 @@ final class OtpManager {
 		);
 
 		if ( empty( $result['success'] ) ) {
+			delete_transient( $lock_key );
+
 			return array(
 				'success' => false,
 				'message' => __( 'ارسال کد ورود در بله ناموفق بود.', 'woopilot-bale' ),

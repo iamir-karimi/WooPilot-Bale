@@ -12,6 +12,8 @@ final class BaleUserRepository {
 		global $wpdb;
 
 		$this->table = $wpdb->prefix . 'woopilot_bale_users';
+
+		$this->maybe_upgrade_table();
 	}
 
 	public function create_or_update_pending_connection(
@@ -173,9 +175,15 @@ final class BaleUserRepository {
 		);
 
 		if ( false === $updated ) {
+			$error_message = __( 'ذخیره اتصال در دیتابیس ناموفق بود.', 'woopilot-bale' );
+
+			if ( ! empty( $wpdb->last_error ) ) {
+				$error_message .= ' ' . $wpdb->last_error;
+			}
+
 			return array(
 				'success' => false,
-				'message' => __( 'ذخیره اتصال در دیتابیس ناموفق بود.', 'woopilot-bale' ),
+				'message' => $error_message,
 				'row'     => $row,
 			);
 		}
@@ -395,6 +403,71 @@ final class BaleUserRepository {
 
 		return false !== $result;
 	}
+
+	public function touch_otp_sent( string $phone ): bool {
+		global $wpdb;
+
+		$phone = $this->normalize_phone( $phone );
+
+		if ( empty( $phone ) ) {
+			return false;
+		}
+
+		$this->maybe_upgrade_table();
+
+		$result = $wpdb->update(
+			$this->table,
+			array(
+				'last_otp_sent_at' => current_time( 'mysql' ),
+				'updated_at'       => current_time( 'mysql' ),
+			),
+			array(
+				'phone' => $phone,
+			),
+			array(
+				'%s',
+				'%s',
+			),
+			array(
+				'%s',
+			)
+		);
+
+		return false !== $result;
+	}
+
+	private function maybe_upgrade_table(): void {
+		global $wpdb;
+
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $this->table ) );
+
+		if ( $exists !== $this->table ) {
+			return;
+		}
+
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$this->table}", 0 );
+
+		if ( ! is_array( $columns ) ) {
+			return;
+		}
+
+		$schema = array(
+			'bale_user_id'     => "ALTER TABLE {$this->table} ADD bale_user_id varchar(191) NOT NULL DEFAULT ''",
+			'bale_username'    => "ALTER TABLE {$this->table} ADD bale_username varchar(191) NOT NULL DEFAULT ''",
+			'connect_token'    => "ALTER TABLE {$this->table} ADD connect_token varchar(191) NOT NULL DEFAULT ''",
+			'status'           => "ALTER TABLE {$this->table} ADD status varchar(30) NOT NULL DEFAULT 'pending'",
+			'created_at'       => "ALTER TABLE {$this->table} ADD created_at datetime NULL",
+			'updated_at'       => "ALTER TABLE {$this->table} ADD updated_at datetime NULL",
+			'last_otp_sent_at' => "ALTER TABLE {$this->table} ADD last_otp_sent_at datetime NULL",
+		);
+
+		foreach ( $schema as $column => $sql ) {
+			if ( ! in_array( $column, $columns, true ) ) {
+				$wpdb->query( $sql );
+			}
+		}
+	}
+
 
 	public function normalize_phone( string $phone ): string {
 		$phone = trim( $phone );

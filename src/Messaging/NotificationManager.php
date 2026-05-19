@@ -98,6 +98,28 @@ final class NotificationManager {
 		$this->send_customer_template( $order, $template_key );
 	}
 
+	public function send_customer_payment_reminder( \WC_Order $order ): void {
+		$this->send_customer_template( $order, 'woopilot_bale_template_payment_reminder' );
+	}
+
+	public function send_admin_low_stock( \WC_Product $product ): void {
+		if ( 'yes' !== get_option( 'woopilot_bale_enable_admin_notifications', 'yes' ) ) {
+			error_log( 'WOOPILOT: admin notifications disabled. Low stock not sent.' );
+			return;
+		}
+
+		$template = $this->get_template( 'woopilot_bale_template_low_stock' );
+
+		if ( empty( $template ) ) {
+			error_log( 'WOOPILOT: low stock template is empty.' );
+			return;
+		}
+
+		$message = $this->message_builder->build_product_message( $template, $product );
+
+		$this->send_to_admins( $message );
+	}
+
 	private function send_customer_template( \WC_Order $order, string $template_key ): void {
 		if ( 'yes' !== get_option( 'woopilot_bale_enable_customer_notifications', 'yes' ) ) {
 			error_log( 'WOOPILOT: customer notifications disabled.' );

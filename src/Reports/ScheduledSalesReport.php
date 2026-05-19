@@ -10,14 +10,25 @@ final class ScheduledSalesReport {
 
 	public const HOOK = 'woopilot_bale_send_scheduled_sales_report';
 
+	private const SCHEDULE_KEY_OPTION = 'woopilot_bale_sales_report_schedule_key';
+
 	public function maybe_schedule(): void {
 		if ( 'yes' !== get_option( 'woopilot_bale_enable_sales_report_notification', 'no' ) ) {
 			wp_clear_scheduled_hook( self::HOOK );
+			delete_option( self::SCHEDULE_KEY_OPTION );
 			return;
 		}
 
-		if ( wp_next_scheduled( self::HOOK ) ) {
+		$current_key = $this->get_schedule_key();
+		$saved_key   = (string) get_option( self::SCHEDULE_KEY_OPTION, '' );
+		$next        = wp_next_scheduled( self::HOOK );
+
+		if ( $next && $saved_key === $current_key ) {
 			return;
+		}
+
+		if ( $next ) {
+			wp_clear_scheduled_hook( self::HOOK );
 		}
 
 		wp_schedule_event(
@@ -25,6 +36,8 @@ final class ScheduledSalesReport {
 			'daily',
 			self::HOOK
 		);
+
+		update_option( self::SCHEDULE_KEY_OPTION, $current_key, false );
 	}
 
 	public function send(): void {
@@ -80,10 +93,20 @@ final class ScheduledSalesReport {
 		}
 	}
 
+	private function get_schedule_key(): string {
+		return md5(
+			wp_timezone_string()
+			. '|'
+			. (string) get_option( 'woopilot_bale_sales_report_send_time', '23:00' )
+			. '|'
+			. (string) get_option( 'woopilot_bale_sales_report_period', 'today' )
+		);
+	}
+
 	private function get_next_timestamp(): int {
 		$time = (string) get_option( 'woopilot_bale_sales_report_send_time', '23:00' );
 
-		if ( ! preg_match( '/^[0-2][0-9]:[0-5][0-9]$/', $time ) ) {
+		if ( ! preg_match( '/^([01][0-9]|2[0-3]):[0-5][0-9]$/', $time ) ) {
 			$time = '23:00';
 		}
 

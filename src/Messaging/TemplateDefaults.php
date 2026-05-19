@@ -16,6 +16,7 @@ final class TemplateDefaults {
 			'woopilot_bale_template_order_completed' => self::order_completed(),
 			'woopilot_bale_template_order_cancelled' => self::order_cancelled(),
 			'woopilot_bale_template_low_stock' => self::low_stock(),
+			'woopilot_bale_template_payment_reminder' => self::payment_reminder(),
 		);
 	}
 
@@ -94,6 +95,20 @@ final class TemplateDefaults {
 وضعیت سفارش: {order_status}
 
 در صورت نیاز، با پشتیبانی فروشگاه تماس بگیرید.";
+	}
+
+	private static function payment_reminder(): string {
+		return "⏰ یادآوری پرداخت سفارش
+
+سلام {customer_name} عزیز
+
+سفارش شما هنوز پرداخت نشده است.
+
+شماره سفارش: {order_id}
+مبلغ سفارش: {total_price}
+وضعیت سفارش: {order_status}
+
+برای تکمیل خرید، لطفاً وارد حساب کاربری خود شوید و پرداخت سفارش را تکمیل کنید.";
 	}
 
 	private static function low_stock(): string {

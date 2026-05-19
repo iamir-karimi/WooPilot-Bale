@@ -92,6 +92,12 @@ final class Plugin {
 		$this->loader->add_action( 'woocommerce_payment_complete', $order_hooks, 'handle_payment_complete', 20, 1 );
 		$this->loader->add_action( 'woocommerce_order_status_changed', $order_hooks, 'handle_order_status_changed', 20, 4 );
 
+		$this->loader->add_action( OrderHooks::PAYMENT_REMINDER_HOOK, $order_hooks, 'handle_payment_reminder', 20, 1 );
+		$this->loader->add_action( 'woocommerce_reduce_order_stock', $order_hooks, 'handle_order_stock_reduced', 20, 1 );
+		$this->loader->add_action( 'woocommerce_low_stock', $order_hooks, 'handle_low_stock', 20, 1 );
+		$this->loader->add_action( 'woocommerce_no_stock', $order_hooks, 'handle_no_stock', 20, 1 );
+		$this->loader->add_action( 'woocommerce_product_set_stock', $order_hooks, 'handle_product_set_stock', 20, 1 );
+
 		$this->loader->add_action( 'admin_enqueue_scripts', $this, 'enqueue_admin_assets' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $this, 'enqueue_frontend_assets' );
 	}
